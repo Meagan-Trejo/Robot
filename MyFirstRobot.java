@@ -143,22 +143,41 @@ public class MyFirstRobot extends AdvancedRobot {
 	 * onScannedRobot: What to do when you see another robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		// Replace the next line with any behavior you would like
 		boolean quit = false;
-		for (GravityPoint g : gravityList) {
-			if (g.getName() == e.getName()) {
+		for (GravityPoint g : gravityList)
+		{
+			if (g.getName().equals(e.getName()))
+			{
 				quit = true;
 			}
 		}
-
-		if (!quit) {
+		
+		if (!quit)
+		{
 			// Get enemy position
 			double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
 			double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
-			double y = getY() + Math.cos(absoluteBearingRadians) * e.getDistance();
-
+			double y = getY() + Math.cos(absoluteBearingRadians) + e.getDistance();
+			
 			gravityList.add(new GravityPoint(e.getName(), x, y, -1));
 			System.out.println("ADDED ENEMY POINT: (" + x + ", " + y + ")");
+		}
+		else
+		{
+			for (int index = 0; index < gravityList.size(); index++)
+			{
+				GravityPoint g = gravityList.get(index);
+				if (g.getName().equals(e.getName()))
+				{
+					gravityList.remove(index);
+					double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
+					double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
+					double y = getY() + Math.cos(absoluteBearingRadians) + e.getDistance();
+					
+					gravityList.add(new GravityPoint(e.getName(), x, y, -1));
+					System.out.println("UPDATED ENEMY POINT: (" + x + ", " + y + ")");
+				}
+			}
 		}
 	}
 
