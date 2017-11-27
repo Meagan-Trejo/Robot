@@ -1,9 +1,9 @@
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 import robocode.AdvancedRobot;
-import robocode.Condition;
 import robocode.HitByBulletEvent;
 import robocode.HitWallEvent;
 import robocode.ScannedRobotEvent;
@@ -22,7 +22,9 @@ public class MyFirstRobot extends AdvancedRobot {
 	private int wallBuffer = 136;
 
 	private ArrayList<GravityPoint> gravityList;
-
+	private HashMap<String, Enemy> enemys;
+	private BountySystem hunter;
+	
 	/**
 	 * run: MyFirstRobot's default behavior
 	 */
@@ -31,7 +33,9 @@ public class MyFirstRobot extends AdvancedRobot {
 		fieldW = this.getBattleFieldWidth();
 		fieldH = this.getBattleFieldWidth();
 		gravityList = new ArrayList<GravityPoint>();
-
+		enemys = new HashMap<String, Enemy>();
+		hunter = new BountySystem(); 
+		
 		// Origin attraction
 		gravityList.add(new GravityPoint("origin", fieldW / 2, fieldH / 2, 10));
 
@@ -145,19 +149,26 @@ public class MyFirstRobot extends AdvancedRobot {
 	public void onScannedRobot(ScannedRobotEvent e) {
 		// Replace the next line with any behavior you would like
 		boolean quit = false;
-		for (GravityPoint g : gravityList) {
-			if (g.getName() == e.getName()) {
-				quit = true;
-			}
+		double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
+		double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
+		double y = getY() + Math.cos(absoluteBearingRadians) * e.getDistance();
+		
+		
+		if(enemys.containsKey(e.getName())) {
+			Enemy target = enemys.get(e.getName());
+			hunter.updateTarget(e.getName(), x, y, e.getEnergy());
+			System.out.println(target);
+			quit = true;
+		} else {
+			System.out.println("FALSE");
 		}
 
 		if (!quit) {
-			// Get enemy position
-			double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
-			double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
-			double y = getY() + Math.cos(absoluteBearingRadians) * e.getDistance();
-
 			gravityList.add(new GravityPoint(e.getName(), x, y, -1));
+			Enemy en = new Enemy(e.getName(), x, y, e.getEnergy());
+			enemys.put(e.getName(), en);
+			hunter.addTarget(en);
+		
 			System.out.println("ADDED ENEMY POINT: (" + x + ", " + y + ")");
 		}
 	}
@@ -179,20 +190,73 @@ public class MyFirstRobot extends AdvancedRobot {
 	}
 }
 
-class otherBot {
-	private double x, y;
+class BountySystem {
+	private HashMap<String, Enemy> targets;
+	
+	public BountySystem() {
+		targets = new HashMap<String, Enemy>();
+	}
+	
+	public void update() {
+		
+	}
+	
+	public void addTarget(Enemy e) {
+		targets.put(e.getName(), e);
+	}
+	
+	public void updateTarget(String name, double x, double y, double energy) {
+		targets.get(name).updatePos(x, y);
+		targets.get(name).updateEnergy(energy);
+	}
+	
+	public Enemy getTarget(String name) {
+		return targets.get(name).copy();
+	}
+	
+}
 
-	public otherBot(double x, double y) {
+class Enemy {
+	private double x, y;
+	private double energy;
+	private String name;
+	private double pointValue;
+	
+	public Enemy(String name, double x, double y, double energy) {
+		this.name = name;
+		this.x = x;
+		this.y = y;
+		this.energy = energy;
+	}
+	
+	public void updateEnergy(double energy) {
+		this.energy = energy;		
+	}
+
+	public Enemy copy() {
+		return new Enemy(name, x, y, energy);
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public double getPointValue() {
+		return pointValue;
+	}
+	
+	public void setPointValue(double pointValue) {
+		this.pointValue = pointValue;
+	}
+	
+	public void updatePos(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
-
-	public double getX() {
-		return x;
-	}
-
-	public double getY() {
-		return y;
+	
+	public String toString() {
+		String s = "Robot: " + name + " | Energy: " + energy + " | X: " + x + " , Y: " + y;
+		return s;
 	}
 }
 
