@@ -208,8 +208,11 @@ class BountySystem {
 			Enemy a = entry.getValue();
 
 			double points = 0;
-			points = a.getEnergy() * 0.20;
-			points += a.getDamageDone();
+			// Damage potential
+			points = a.getEnergy();
+			
+			// Kill bonus potential
+			points += a.getDamageDone() * 0.20;
 
 			a.setPointValue(points);
 		}
