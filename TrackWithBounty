@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 public class ModifiedTracker extends RateControlRobot
 {
 	int count = 0;
+	int distCount = 0;
 	double gunTurnAmt;
 	String trackName;
 	
@@ -67,41 +68,71 @@ public class ModifiedTracker extends RateControlRobot
 			out.println("Tracking " + trackName); //should only print once, but prints repeatedly
 		}
 		
-//		while (e.getDistance() > 150)
+		if (e.getDistance() > 150)
 		{
-			setVelocityRate(e.getVelocity() + 2);
+			setVelocityRate(e.getVelocity() + 7);
 			gunTurnAmt = normalRelativeAngleDegrees(e.getBearing() + (getHeading() - getRadarHeading()));
 			setTurnGunRight(gunTurnAmt);
-			fire(4);
+			++distCount;
+			if (distCount == 5)
+			{
+				fire(5);
+			}
+			fire(1); //misses often
 			turnRight(e.getBearing());
-			ahead(e.getDistance() - 140);
+			ahead(e.getDistance() - 50);
 		}
-//		else
+		else
 		{
 			gunTurnAmt = normalRelativeAngleDegrees(e.getBearing() + getHeading() - getRadarHeading());
 			turnGunRight(gunTurnAmt);
-			fire(3);
+//			fire(3);
 			
 			if (e.getDistance() < 100)
 			{
-				if (e.getEnergy() < 50)
+				if (e.getEnergy() < 40)
 				{
 					turnRight(e.getBearing());
+					out.println("Gonna RAM " + trackName + "!!!");
 					ahead(e.getDistance() + 1);
+					if (e.getEnergy() > 10)
+					{
+						fire(2);
+					}
 				}	
 			
 				else if (e.getBearing() > -90 && e.getBearing() <= 90)
 				{
 					back(40);
+					fire(3);
 				}
 				else
 				{
 					ahead(40);
+					fire(3);
 				}
+			}
+			else
+			{
+				fire(3);
 			}
 			scan();
 		}
 		
+	}
+	
+	public void onHitRobot(HitRobotEvent e)
+	{
+		if (trackName != null && !trackName.equals(e.getName()))
+		{
+			out.println("Tracking " + e.getName() + " due to collision");
+		}
+		
+		trackName = e.getName();
+		gunTurnAmt = normalRelativeAngleDegrees(e.getBearing() + getHeading() - getRadarHeading());
+		turnGunRight(gunTurnAmt);
+		fire(3);
+		back(50);
 	}
 
 	/**
