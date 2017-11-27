@@ -36,7 +36,7 @@ public class MyFirstRobot extends AdvancedRobot {
 		gravityList = new ArrayList<GravityPoint>();
 		enemys = new HashMap<String, Enemy>();
 		hunter = new BountySystem();
-		
+
 		// Origin attraction
 		gravityList.add(new GravityPoint("origin", fieldW / 2, fieldH / 2, 10));
 
@@ -149,35 +149,34 @@ public class MyFirstRobot extends AdvancedRobot {
 	 * onScannedRobot: What to do when you see another robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		// Replace the next line with any behavior you would like
-		boolean quit = false;
 		double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
 		double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
 		double y = getY() + Math.cos(absoluteBearingRadians) * e.getDistance();
 
 		if (enemys.containsKey(e.getName())) {
+			// Update target
 			Enemy target = enemys.get(e.getName());
 			hunter.updateTarget(e.getName(), x, y, e.getEnergy());
+
+			// See what's happening
 			System.out.println(target);
+
+			// Update gravity point
 			int ind = target.getGravityIndex();
 			gravityList.get(ind).setX(x);
 			gravityList.get(ind).setY(y);
-			quit = true;
 		} else {
-			System.out.println("FALSE");
-		}
-
-		if (!quit) {
+			// Create new gravity point and target
 			gravityList.add(new GravityPoint(e.getName(), x, y, -1));
 			Enemy en = new Enemy(e.getName(), x, y, e.getEnergy());
 			en.setGravityIndex(gravityList.size() - 1);
 			enemys.put(e.getName(), en);
 			hunter.addTarget(en);
 
-			System.out.println("ADDED ENEMY POINT: (" + x + ", " + y + ")");
-		} else {
-			
+			System.out.print("ADDED ENEMY: ");
+			System.out.println(en);
 		}
+
 	}
 
 	/**
@@ -205,16 +204,16 @@ class BountySystem {
 	}
 
 	public void update() {
-		for(Entry<String, Enemy> entry : targets.entrySet()) {
+		for (Entry<String, Enemy> entry : targets.entrySet()) {
 			Enemy a = entry.getValue();
-			
+
 			double points = 0;
 			points = a.getEnergy() * 0.20;
 			points += a.getDamageDone();
-			
+
 			a.setPointValue(points);
 		}
-		
+
 	}
 
 	public void addTarget(Enemy e) {
@@ -250,7 +249,7 @@ class Enemy {
 	public void setGravityIndex(int index) {
 		gravIndex = index;
 	}
-	
+
 	public int getGravityIndex() {
 		return gravIndex;
 	}
@@ -262,15 +261,15 @@ class Enemy {
 	public void updateEnergy(double energy) {
 		this.energy = energy;
 	}
-	
+
 	public void setDamageDone(double damage) {
 		damageDone = damage;
 	}
-	
+
 	public double getDamageDone() {
 		return damageDone;
 	}
-	
+
 	public Enemy copy() {
 		return new Enemy(name, x, y, energy);
 	}
