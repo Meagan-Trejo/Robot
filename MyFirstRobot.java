@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import robocode.AdvancedRobot;
@@ -24,7 +25,7 @@ public class MyFirstRobot extends AdvancedRobot {
 	private ArrayList<GravityPoint> gravityList;
 	private HashMap<String, Enemy> enemys;
 	private BountySystem hunter;
-	
+
 	/**
 	 * run: MyFirstRobot's default behavior
 	 */
@@ -34,7 +35,7 @@ public class MyFirstRobot extends AdvancedRobot {
 		fieldH = this.getBattleFieldWidth();
 		gravityList = new ArrayList<GravityPoint>();
 		enemys = new HashMap<String, Enemy>();
-		hunter = new BountySystem(); 
+		hunter = new BountySystem();
 		
 		// Origin attraction
 		gravityList.add(new GravityPoint("origin", fieldW / 2, fieldH / 2, 10));
@@ -48,6 +49,7 @@ public class MyFirstRobot extends AdvancedRobot {
 		// Robot main loop
 		while (true) {
 			antiGravity();
+			hunter.update();
 
 			if (randomCounter >= 100) {
 				gravityList.get(0).setX(r.nextInt((int) fieldW));
@@ -152,12 +154,14 @@ public class MyFirstRobot extends AdvancedRobot {
 		double absoluteBearingRadians = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);
 		double x = getX() + Math.sin(absoluteBearingRadians) * e.getDistance();
 		double y = getY() + Math.cos(absoluteBearingRadians) * e.getDistance();
-		
-		
-		if(enemys.containsKey(e.getName())) {
+
+		if (enemys.containsKey(e.getName())) {
 			Enemy target = enemys.get(e.getName());
 			hunter.updateTarget(e.getName(), x, y, e.getEnergy());
 			System.out.println(target);
+			int ind = target.getGravityIndex();
+			gravityList.get(ind).setX(x);
+			gravityList.get(ind).setY(y);
 			quit = true;
 		} else {
 			System.out.println("FALSE");
@@ -166,10 +170,13 @@ public class MyFirstRobot extends AdvancedRobot {
 		if (!quit) {
 			gravityList.add(new GravityPoint(e.getName(), x, y, -1));
 			Enemy en = new Enemy(e.getName(), x, y, e.getEnergy());
+			en.setGravityIndex(gravityList.size() - 1);
 			enemys.put(e.getName(), en);
 			hunter.addTarget(en);
-		
+
 			System.out.println("ADDED ENEMY POINT: (" + x + ", " + y + ")");
+		} else {
+			
 		}
 	}
 
@@ -192,70 +199,101 @@ public class MyFirstRobot extends AdvancedRobot {
 
 class BountySystem {
 	private HashMap<String, Enemy> targets;
-	
+
 	public BountySystem() {
 		targets = new HashMap<String, Enemy>();
 	}
-	
+
 	public void update() {
+		for(Entry<String, Enemy> entry : targets.entrySet()) {
+			Enemy a = entry.getValue();
+			
+			double points = 0;
+			points = a.getEnergy() * 0.20;
+			points += a.getDamageDone();
+			
+			a.setPointValue(points);
+		}
 		
 	}
-	
+
 	public void addTarget(Enemy e) {
 		targets.put(e.getName(), e);
 	}
-	
+
 	public void updateTarget(String name, double x, double y, double energy) {
 		targets.get(name).updatePos(x, y);
 		targets.get(name).updateEnergy(energy);
 	}
-	
+
 	public Enemy getTarget(String name) {
 		return targets.get(name).copy();
 	}
-	
+
 }
 
 class Enemy {
 	private double x, y;
 	private double energy;
+	private double damageDone = 0;
 	private String name;
 	private double pointValue;
-	
+	private int gravIndex;
+
 	public Enemy(String name, double x, double y, double energy) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
 		this.energy = energy;
 	}
+
+	public void setGravityIndex(int index) {
+		gravIndex = index;
+	}
 	
-	public void updateEnergy(double energy) {
-		this.energy = energy;		
+	public int getGravityIndex() {
+		return gravIndex;
 	}
 
+	public double getEnergy() {
+		return energy;
+	}
+
+	public void updateEnergy(double energy) {
+		this.energy = energy;
+	}
+	
+	public void setDamageDone(double damage) {
+		damageDone = damage;
+	}
+	
+	public double getDamageDone() {
+		return damageDone;
+	}
+	
 	public Enemy copy() {
 		return new Enemy(name, x, y, energy);
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public double getPointValue() {
 		return pointValue;
 	}
-	
+
 	public void setPointValue(double pointValue) {
 		this.pointValue = pointValue;
 	}
-	
+
 	public void updatePos(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
-	
+
 	public String toString() {
-		String s = "Robot: " + name + " | Energy: " + energy + " | X: " + x + " , Y: " + y;
+		String s = "Robot: " + name + " | Energy: " + energy + " | Worth: " + pointValue + " | X: " + x + " , Y: " + y;
 		return s;
 	}
 }
