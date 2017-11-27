@@ -17,7 +17,6 @@ import java.util.Map.Entry;
 public class ModifiedTracker extends RateControlRobot
 {
 	int count = 0;
-	int distCount = 0;
 	double gunTurnAmt;
 	String trackName;
 	
@@ -65,7 +64,7 @@ public class ModifiedTracker extends RateControlRobot
 		if (trackName == null)
 		{
 			trackName = e.getName();
-			out.println("Tracking " + trackName); //should only print once, but prints repeatedly
+			out.println("Tracking " + trackName);
 		}
 		
 		if (e.getDistance() > 150)
@@ -74,10 +73,6 @@ public class ModifiedTracker extends RateControlRobot
 			gunTurnAmt = normalRelativeAngleDegrees(e.getBearing() + (getHeading() - getRadarHeading()));
 			setTurnGunRight(gunTurnAmt);
 			++distCount;
-			if (distCount == 5)
-			{
-				fire(5);
-			}
 			fire(1); //misses often
 			turnRight(e.getBearing());
 			ahead(e.getDistance() - 50);
